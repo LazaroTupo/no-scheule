@@ -1,0 +1,8 @@
+[workspace.package]
+version = "0.1.0"
+rust-version = "1.72"
+edition = "2024"
+authors = ["sebastianrojas", "lazaro"]
+
+[workspace]
+members = ["teacher_system", "student_system", "shared", "main"]

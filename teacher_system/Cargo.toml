@@ -1,0 +1,11 @@
+[package]
+name = "teacher_system"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+shared = { path = "../shared" }
+
+[lib]
+name = "teacher_system"
+path = "lib.rs"

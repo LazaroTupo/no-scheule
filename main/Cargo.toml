@@ -1,0 +1,12 @@
+[package]
+name = "main"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+teacher_system = { path = "../teacher_system" }
+student_system = { path = "../student_system" }
+
+[[bin]]
+name = "scheduling_app"
+path = "main.rs"
