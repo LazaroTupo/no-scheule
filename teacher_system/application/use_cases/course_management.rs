@@ -20,31 +20,18 @@ impl<'a> CourseManagementUseCase<'a> {
         }
     }
 
-    pub async fn register_course(
-        &self,
-        course: Course,
-        schedule: Schedule,
-    ) -> Result<(), String> {
+    pub async fn register_course(&self, course: Course, schedule: Schedule) -> Result<(), String> {
         // Validar disponibilidad
-        let has_conflict = self.validation_service
+        let has_conflict = self
+            .validation_service
             .check_teacher_availability(&course.teacher_id, &schedule)
             .await?;
-        
+
         if has_conflict {
             return Err("El profesor ya tiene un curso en ese horario".into());
         }
 
         // Crear curso
         self.course_repo.create_course(&course).await
-    }
-
-    pub async fn assign_classroom(
-        &self,
-        course_id: &str,
-        facility_id: &str,
-        schedule: Schedule,
-    ) -> Result<(), String> {
-        // Implementar lógica de asignación de aula
-        Ok(())
     }
 }

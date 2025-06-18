@@ -1,1 +1,2 @@
-mod supabase;
+pub mod auth;
+pub mod supabase;

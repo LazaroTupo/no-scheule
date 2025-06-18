@@ -1,14 +1,21 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Curriculum {
-    Ingenieria,
-    Ciencia,
-    Humanidades,
+    Engineering,
+    Science,
+    Humanities,
+    // otros
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SessionType {
     Theory,
     Lab,
+    // otros
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Course {
     pub id: String,
     pub code: String,

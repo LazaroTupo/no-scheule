@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::domain::models::{Course, Schedule};
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait SchedulingService: Send + Sync {
@@ -9,7 +9,7 @@ pub trait SchedulingService: Send + Sync {
         duration_minutes: i32,
         preferred_days: Vec<Weekday>,
     ) -> Result<Vec<Schedule>, String>;
-    
+
     async fn validate_schedule(
         &self,
         teacher_id: &str,
@@ -39,4 +39,10 @@ impl SchedulingService for DefaultSchedulingService {
         // basado en los cursos existentes del profesor
         Ok(vec![])
     }
+
+    async fn validate_schedule(
+        &self,
+        teacher_id: &str,
+        schedule: &Schedule,
+    ) -> Result<bool, String>;
 }
