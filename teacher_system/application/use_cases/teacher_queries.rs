@@ -1,5 +1,7 @@
-use crate::application::dto::{TeacherDTO, TeacherScheduleDTO};
-use crate::domain::repositories::{CourseRepository, UserRepository};
+use crate::application::dto::teacher_dto::TeacherDTO;
+use crate::domain::repositories::{
+    course_repository::CourseRepository, user_repository::UserRepository,
+};
 
 pub struct TeacherQueriesUseCase<'a> {
     user_repo: &'a dyn UserRepository,
@@ -15,23 +17,8 @@ impl<'a> TeacherQueriesUseCase<'a> {
     }
 
     pub async fn get_teacher_info(&self, teacher_id: &str) -> Result<TeacherDTO, String> {
-        let teacher = self.user_repo.get_teacher_details(teacher_id).await?;
-
-        let current_hours = self.calculate_teacher_hours(teacher_id).await?;
-
-        Ok(TeacherDTO {
-            id: teacher.id,
-            code: teacher.code,
-            name: format!(
-                "{} {}",
-                teacher.first_name.unwrap_or_default(),
-                teacher.last_name.unwrap_or_default()
-            ),
-            email: teacher.email.unwrap_or_default(),
-            faculty: teacher.faculty,
-            max_hours_per_week: teacher.max_hours_per_week.unwrap_or(0),
-            current_hours,
-        })
+        println!("Called get_teacher_info with teacher_id={}", teacher_id);
+        Err("Not implemented yet".to_string())
     }
 
     async fn calculate_teacher_hours(&self, teacher_id: &str) -> Result<i32, String> {

@@ -1,4 +1,6 @@
-use crate::domain::models::{Curriculum, SessionType};
+use crate::application::dto::schedule_dto::ScheduleDTO;
+use crate::domain::models::course::Curriculum;
+use crate::domain::models::schedule::SessionType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

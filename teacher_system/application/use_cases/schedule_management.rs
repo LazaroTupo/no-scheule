@@ -1,8 +1,7 @@
-use crate::application::dto::ScheduleDTO;
+use crate::application::dto::schedule_dto::ScheduleDTO;
 use crate::domain::{
-    models::Schedule,
-    repositories::{CourseRepository, ScheduleRepository},
-    services::ValidationService,
+    models::schedule::Schedule, repositories::schedule_repository::ScheduleRepository,
+    services::validation_service::ValidationService,
 };
 
 pub struct ScheduleManagementUseCase<'a> {

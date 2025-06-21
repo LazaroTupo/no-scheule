@@ -1,7 +1,7 @@
 use crate::domain::{
-    models::{Course, Schedule},
-    repositories::CourseRepository,
-    services::ValidationService,
+    models::course::Course, models::schedule::Schedule,
+    repositories::course_repository::CourseRepository,
+    services::validation_service::ValidationService,
 };
 
 pub struct CourseManagementUseCase<'a> {

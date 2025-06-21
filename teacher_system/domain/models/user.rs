@@ -12,7 +12,7 @@ pub enum StudentStatus {
 pub enum ContractType {
     FullTime,
     PartTime,
-    Visiting,
+    Contratado,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

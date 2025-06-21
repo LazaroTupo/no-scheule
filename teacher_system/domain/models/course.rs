@@ -9,13 +9,6 @@ pub enum Curriculum {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum SessionType {
-    Theory,
-    Lab,
-    // otros
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Course {
     pub id: String,
     pub code: String,

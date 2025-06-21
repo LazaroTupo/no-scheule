@@ -1,4 +1,4 @@
-use crate::domain::models::Schedule;
+use crate::domain::models::schedule::{Schedule, Weekday};
 use async_trait::async_trait;
 
 #[async_trait]

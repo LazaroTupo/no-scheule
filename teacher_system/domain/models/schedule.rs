@@ -3,13 +3,20 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Weekday {
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday,
+    Lunes,
+    Martes,
+    Miercoles,
+    Jueves,
+    Viernes,
+    Sábado,
+    Domingo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SessionType {
+    Teoria,
+    Laboratorio,
+    // otros
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

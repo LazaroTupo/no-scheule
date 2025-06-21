@@ -1,8 +1,8 @@
-use crate::application::dto::ScheduleDTO;
+use crate::application::dto::schedule_dto::ScheduleDTO;
 use crate::domain::{
-    models::Schedule,
-    repositories::{ScheduleRepository, UserRepository},
-    services::SchedulingService,
+    models::schedule::{Schedule, Weekday},
+    repositories::user_repository::UserRepository,
+    services::scheduling_service::SchedulingService,
 };
 
 pub struct ExtracurricularManagementUseCase<'a> {

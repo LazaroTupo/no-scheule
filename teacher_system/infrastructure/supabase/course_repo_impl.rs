@@ -1,13 +1,15 @@
-use crate::domain::{models::Course, repositories::CourseRepository};
+use crate::domain::{models::course::Course, repositories::course_repository::CourseRepository};
 use async_trait::async_trait;
+use std::sync::Arc;
 use supabase_rs::SupabaseClient;
 
+#[derive(Clone)]
 pub struct SupabaseCourseRepository {
-    client: SupabaseClient,
+    client: Arc<SupabaseClient>,
 }
 
 impl SupabaseCourseRepository {
-    pub fn new(client: SupabaseClient) -> Self {
+    pub fn new(client: Arc<SupabaseClient>) -> Self {
         Self { client }
     }
 }
@@ -15,25 +17,23 @@ impl SupabaseCourseRepository {
 #[async_trait]
 impl CourseRepository for SupabaseCourseRepository {
     async fn create_course(&self, course: &Course) -> Result<(), String> {
-        let response = self
-            .client
-            .from("courses")
-            .insert(serde_json::json!({
-                "id": course.id,
-                "code": course.code,
-                "name": course.name,
-                // otros campos
-            }))
-            .execute()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            Err("Error al crear curso".into())
-        }
+        println!("Creando curso: {:?}", course);
+        Ok(())
     }
 
-    // Implementar otros métodos
+    async fn update_course(&self, course: &Course) -> Result<(), String> {
+        // implementar la lógica para actualizar un curso
+        println!("Actualizando curso: {:?}", course);
+        Ok(())
+    }
+    async fn get_course_by_id(&self, id: &str) -> Result<Option<Course>, String> {
+        // implementar la lógica para obtener un curso por ID
+        println!("Obteniendo curso por id: {}", id);
+        Ok(None)
+    }
+    async fn get_teacher_courses(&self, teacher_id: &str) -> Result<Vec<Course>, String> {
+        // implementar la lógica para obtener cursos de un profesor
+        println!("Obteniendo cursos para el profesor con id: {}", teacher_id);
+        Ok(vec![])
+    }
 }

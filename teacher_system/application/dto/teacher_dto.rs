@@ -1,3 +1,5 @@
+use crate::application::dto::course_dto::CourseResponseDTO;
+use crate::application::dto::schedule_dto::ScheduleResponseDTO;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

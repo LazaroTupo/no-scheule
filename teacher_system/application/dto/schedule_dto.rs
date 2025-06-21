@@ -1,4 +1,4 @@
-use crate::domain::models::{SessionType, Weekday};
+use crate::domain::models::schedule::{SessionType, Weekday};
 use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 

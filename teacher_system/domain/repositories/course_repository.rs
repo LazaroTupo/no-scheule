@@ -1,4 +1,4 @@
-use crate::domain::models::Course;
+use crate::domain::models::course::Course;
 use async_trait::async_trait;
 
 #[async_trait]

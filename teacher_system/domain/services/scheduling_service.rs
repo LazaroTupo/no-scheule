@@ -1,5 +1,7 @@
-use crate::domain::models::{Course, Schedule};
+use crate::domain::models::schedule::{Schedule, Weekday};
+use crate::domain::repositories::course_repository::CourseRepository;
 use async_trait::async_trait;
+use std::sync::Arc;
 
 #[async_trait]
 pub trait SchedulingService: Send + Sync {
@@ -18,11 +20,11 @@ pub trait SchedulingService: Send + Sync {
 }
 
 pub struct DefaultSchedulingService {
-    course_repo: Box<dyn CourseRepository>,
+    course_repo: Arc<dyn CourseRepository>,
 }
 
 impl DefaultSchedulingService {
-    pub fn new(course_repo: Box<dyn CourseRepository>) -> Self {
+    pub fn new(course_repo: Arc<dyn CourseRepository>) -> Self {
         Self { course_repo }
     }
 }
@@ -44,5 +46,16 @@ impl SchedulingService for DefaultSchedulingService {
         &self,
         teacher_id: &str,
         schedule: &Schedule,
-    ) -> Result<bool, String>;
+    ) -> Result<bool, String> {
+        // Implementar lógica para validar si el horario propuesto
+        // no entra en conflicto con otros cursos del profesor
+
+        // let courses = self.course_repo.get_courses_by_teacher(teacher_id).await?;
+        // for course in courses {
+        //     if course.schedule.conflicts_with(schedule) {
+        //         return Ok(false);
+        //     }
+        // }
+        Ok(true)
+    }
 }

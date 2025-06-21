@@ -6,3 +6,4 @@ authors = ["sebastianrojas", "lazaro"]
 
 [workspace]
 members = ["teacher_system", "student_system", "shared", "main"]
+resolver = "2"
