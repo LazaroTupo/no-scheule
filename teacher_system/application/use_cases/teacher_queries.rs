@@ -21,6 +21,19 @@ impl<'a> TeacherQueriesUseCase<'a> {
         Err("Not implemented yet".to_string())
     }
 
+    pub async fn get_teacher_courses(&self, teacher_id: &str) -> Result<TeacherDTO, String> {
+        println!("Called get_teacher_info with teacher_id={}", teacher_id);
+        Err("Not implemented yet".to_string())
+    }
+
+    pub async fn get_teacher_extracurricular(
+        &self,
+        teacher_id: &str,
+    ) -> Result<TeacherDTO, String> {
+        println!("Called get_teacher_info with teacher_id={}", teacher_id);
+        Err("Not implemented yet".to_string())
+    }
+
     async fn calculate_teacher_hours(&self, teacher_id: &str) -> Result<i32, String> {
         let courses = self.course_repo.get_teacher_courses(teacher_id).await?;
         let total_hours = courses.iter().map(|c| c.hours_per_week).sum();

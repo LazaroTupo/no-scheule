@@ -12,6 +12,10 @@ chrono = { version = "0.4", features = ["serde"] }
 supabase_rs = "0.4.3"
 uuid = { version = "1.0", features = ["v4"] }
 tokio = { version = "1.0", features = ["full"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+http = "0.2"
 
 [lib]
 name = "teacher_system"
