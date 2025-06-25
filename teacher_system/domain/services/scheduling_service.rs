@@ -1,6 +1,12 @@
-use crate::domain::models::schedule::{Schedule, Weekday};
-use crate::domain::repositories::course_repository::CourseRepository;
+use crate::domain::{
+    models::schedule::{Schedule, SessionType, Weekday},
+    repositories::{
+        course_repository::CourseRepository, schedule_repository::ScheduleRepository,
+        user_repository::UserRepository,
+    },
+};
 use async_trait::async_trait;
+use chrono::NaiveTime;
 use std::sync::Arc;
 
 #[async_trait]
@@ -20,12 +26,22 @@ pub trait SchedulingService: Send + Sync {
 }
 
 pub struct DefaultSchedulingService {
-    course_repo: Arc<dyn CourseRepository>,
+    course_repo: Arc<dyn CourseRepository + Send + Sync>,
+    schedule_repo: Arc<dyn ScheduleRepository + Send + Sync>,
+    user_repo: Arc<dyn UserRepository + Send + Sync>,
 }
 
 impl DefaultSchedulingService {
-    pub fn new(course_repo: Arc<dyn CourseRepository>) -> Self {
-        Self { course_repo }
+    pub fn new(
+        course_repo: Arc<dyn CourseRepository + Send + Sync>,
+        schedule_repo: Arc<dyn ScheduleRepository + Send + Sync>,
+        user_repo: Arc<dyn UserRepository + Send + Sync>,
+    ) -> Self {
+        Self {
+            course_repo,
+            schedule_repo,
+            user_repo,
+        }
     }
 }
 
@@ -39,6 +55,17 @@ impl SchedulingService for DefaultSchedulingService {
     ) -> Result<Vec<Schedule>, String> {
         // Implementar lógica para sugerir horarios disponibles
         // basado en los cursos existentes del profesor
+        // Obtener todos los cursos del profesor
+        let teacher_courses = self.course_repo.get_teacher_courses(teacher_id).await?;
+
+        // Obtener todos los horarios de esos cursos
+        let mut busy_schedules = Vec::new();
+        for course in teacher_courses {
+            if let Ok(schedule) = self.course_repo.get_course_schedule(&course.id).await? {
+                busy_schedules.push(schedule);
+            }
+        }
+
         Ok(vec![])
     }
 
@@ -47,7 +74,7 @@ impl SchedulingService for DefaultSchedulingService {
         teacher_id: &str,
         schedule: &Schedule,
     ) -> Result<bool, String> {
-        // Implementar lógica para validar si el horario propuesto
+        // Implementar lógica para validar si el horario pruesto
         // no entra en conflicto con otros cursos del profesor
 
         // let courses = self.course_repo.get_courses_by_teacher(teacher_id).await?;

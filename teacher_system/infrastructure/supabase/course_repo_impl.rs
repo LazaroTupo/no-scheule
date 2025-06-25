@@ -1,4 +1,10 @@
-use crate::domain::{models::course::Course, repositories::course_repository::CourseRepository};
+use crate::domain::{
+    models::{
+        course::Course,
+        schedule::{Schedule, SessionType, Weekday},
+    },
+    repositories::course_repository::CourseRepository,
+};
 use async_trait::async_trait;
 use std::sync::Arc;
 use supabase_rs::SupabaseClient;
@@ -35,5 +41,20 @@ impl CourseRepository for SupabaseCourseRepository {
         // implementar la lógica para obtener cursos de un profesor
         println!("Obteniendo cursos para el profesor con id: {}", teacher_id);
         Ok(vec![])
+    }
+    async fn get_course_schedule(&self, schedule_id: &str) -> Result<Schedule, String> {
+        // implementar la lógica para obtener el horario de un curso
+        println!("Obteniendo horario para el curso con id: {}", schedule_id);
+        // Por ahora, retornar un horario vacío
+        let schedule = Schedule {
+            id: schedule_id.to_string(),
+            facility_id: String::new(),
+            start_time: chrono::NaiveTime::from_hms(0, 0, 0),
+            end_time: chrono::NaiveTime::from_hms(0, 0, 0),
+            session_type: SessionType::Laboratorio,
+            day: Weekday::Lunes,
+            location_detail: Some("Aula 101, Edificio B".to_string()),
+        };
+        Ok(schedule)
     }
 }
