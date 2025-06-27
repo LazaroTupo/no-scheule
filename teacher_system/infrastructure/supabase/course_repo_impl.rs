@@ -42,7 +42,7 @@ impl CourseRepository for SupabaseCourseRepository {
         println!("Obteniendo cursos para el profesor con id: {}", teacher_id);
         Ok(vec![])
     }
-    async fn get_course_schedule(&self, schedule_id: &str) -> Result<Schedule, String> {
+    async fn get_course_schedule(&self, course_id: &str) -> Result<Schedule, String> {
         // implementar la lógica para obtener el horario de un curso
         println!("Obteniendo horario para el curso con id: {}", schedule_id);
         // Por ahora, retornar un horario vacío
