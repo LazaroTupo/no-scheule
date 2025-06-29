@@ -96,6 +96,27 @@ pub enum UserRole {
     Coordinator,
 }
 
+impl UserRole {
+    pub fn to_string(&self) -> String {
+        match self {
+            UserRole::Student => "student".to_string(),
+            UserRole::Teacher => "teacher".to_string(),
+            UserRole::Admin => "admin".to_string(),
+            UserRole::Coordinator => "coordinator".to_string(),
+        }
+    }
+
+    pub fn from_string(role: &str) -> Option<Self> {
+        match role {
+            "student" => Some(UserRole::Student),
+            "teacher" => Some(UserRole::Teacher),
+            "admin" => Some(UserRole::Admin),
+            "coordinator" => Some(UserRole::Coordinator),
+            _ => None,
+        }
+    }
+}
+
 pub fn to_domain_curriculum(curr: &CurriculumType) -> Curriculum {
     match curr {
         CurriculumType::Obligatory => Curriculum::Obligatory,
