@@ -1,12 +1,5 @@
+use crate::domain::models::enums::Curriculum;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Curriculum {
-    Engineering,
-    Science,
-    Humanities,
-    // otros
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Course {
@@ -20,7 +13,7 @@ pub struct Course {
     pub hours_per_week: i32,
     pub cycle: i32,
     pub teacher_id: String,
-    pub schedule_id: String,
+    pub facility_id: String,
     pub enrolled: i32,
     pub semester: String,
     pub academic_year: i32,

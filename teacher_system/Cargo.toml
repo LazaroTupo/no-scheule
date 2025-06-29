@@ -10,12 +10,20 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 supabase_rs = "0.4.3"
-uuid = { version = "1.0", features = ["v4"] }
-tokio = { version = "1.0", features = ["full"] }
-axum = "0.7"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors"] }
-http = "0.2"
+uuid = { version = "1.17", features = ["v4"] }
+tokio = { version = "1.45.1", features = ["full"] }
+actix-web = "4.11.0"
+actix-cors = "0.7.1"
+actix-rt = "2.10.0"
+env_logger = "0.11.8"
+log = "0.4"
+once_cell = "1.21.3"
+anyhow = "1.0.98"
+sea-orm = { version = "1.1.12", features = [
+  "sqlx-postgres",
+  "runtime-tokio-native-tls",
+] }
+
 
 [lib]
 name = "teacher_system"

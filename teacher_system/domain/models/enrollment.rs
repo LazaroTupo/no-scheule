@@ -1,12 +1,5 @@
+use crate::domain::models::enums::EnrollmentStatus;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum EnrollmentStatus {
-    Enrolled,
-    Withdrawn,
-    Completed,
-    Failed,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Enrollment {
