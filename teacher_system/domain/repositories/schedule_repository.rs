@@ -7,7 +7,7 @@ pub trait ScheduleRepository: Send + Sync {
     async fn update_schedule(&self, schedule: &Schedule) -> Result<(), String>;
     async fn get_schedule_by_id(&self, schedule_id: &str) -> Result<Option<Schedule>, String>;
     async fn get_all_schedules(&self) -> Result<Vec<Schedule>, String>;
-    async fn get_schedules_by_course(&self, course_id: &str) -> Result<Vec<Schedule>, String>;
+    async fn get_schedules_by_course(&self, course_id: &str) -> Result<Option<Schedule>, String>;
     async fn get_schedules_by_course_name(
         &self,
         name_course: &str,

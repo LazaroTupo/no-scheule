@@ -1,3 +1,3 @@
 pub mod controllers;
-pub mod error;
+pub mod dto;
 pub mod routes;

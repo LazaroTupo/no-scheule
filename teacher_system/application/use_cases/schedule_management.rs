@@ -1,54 +1,95 @@
-use crate::application::dto::schedule_dto::ScheduleDTO;
 use crate::domain::{
-    models::schedule::Schedule, repositories::schedule_repository::ScheduleRepository,
-    services::validation_service::ValidationService,
+    models::{enums::Weekday, schedule::Schedule},
+    repositories::schedule_repository::ScheduleRepository,
+    services::{scheduling_service::SchedulingService, validation_service::ValidationService},
 };
+use async_trait::async_trait;
 
-pub struct ScheduleManagementUseCase<'a> {
-    schedule_repo: &'a dyn ScheduleRepository,
-    validation_service: &'a dyn ValidationService,
+#[async_trait]
+pub trait ScheduleManagementUseCase {
+    async fn get_all(&self) -> Result<Vec<Schedule>, String>;
+    async fn get_by_id(&self, id: &str) -> Result<Schedule, String>;
+    async fn create(&self, schedule: Schedule) -> Result<(), String>;
+    async fn update(&self, schedule: &Schedule) -> Result<(), String>;
+    async fn delete(&self, id: &str) -> Result<(), String>;
+    async fn suggest_available_times(
+        &self,
+        teacher_id: &str,
+        duration_minutes: i32,
+        preferred_days: Vec<Weekday>,
+    ) -> Result<Vec<Schedule>, String>;
+}
+pub struct ScheduleManagementUseCaseImpl {
+    schedule_repo: Box<dyn ScheduleRepository + Send + Sync>,
+    validation_service: Box<dyn ValidationService + Send + Sync>,
+    scheduling_service: Box<dyn SchedulingService + Send + Sync>,
 }
 
-impl<'a> ScheduleManagementUseCase<'a> {
+impl ScheduleManagementUseCaseImpl {
     pub fn new(
-        schedule_repo: &'a dyn ScheduleRepository,
-        validation_service: &'a dyn ValidationService,
+        schedule_repo: Box<dyn ScheduleRepository + Send + Sync>,
+        validation_service: Box<dyn ValidationService + Send + Sync>,
+        scheduling_service: Box<dyn SchedulingService + Send + Sync>,
     ) -> Self {
         Self {
             schedule_repo,
             validation_service,
+            scheduling_service,
         }
     }
+}
 
-    pub async fn set_course_schedule(
-        &self,
-        course_id: &str,
-        schedule: ScheduleDTO,
-    ) -> Result<Schedule, String> {
-        // Convertir DTO a modelo de dominio
-        let new_schedule = Schedule {
-            id: format!("sch_{}", uuid::Uuid::new_v4()),
-            facility_id: schedule.facility_id.unwrap_or_default(),
-            day: schedule.day,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            session_type: schedule.session_type,
-            location_detail: schedule.location_detail,
-        };
+#[async_trait]
+impl ScheduleManagementUseCase for ScheduleManagementUseCaseImpl {
+    async fn get_all(&self) -> Result<Vec<Schedule>, String> {
+        self.schedule_repo.get_all_schedules().await
+    }
 
-        // Validar disponibilidad
-        let is_teacher_available = self
+    async fn get_by_id(&self, id: &str) -> Result<Schedule, String> {
+        self.schedule_repo
+            .get_schedule_by_id(id)
+            .await?
+            .ok_or_else(|| "Schedule not found".to_string())
+    }
+
+    async fn create(&self, schedule: Schedule) -> Result<(), String> {
+        let is_available = self
             .validation_service
-            .check_teacher_availability(course_id, &new_schedule)
+            .check_facility_availability(&schedule.facility_id, &schedule)
             .await?;
 
-        if !is_teacher_available {
-            return Err("El profesor no está disponible en ese horario".into());
+        if !is_available {
+            return Err("Facility not available at requested time".to_string());
         }
 
-        // Crear horario
-        self.schedule_repo.create_schedule(&new_schedule).await?;
+        self.schedule_repo.create_schedule(&schedule).await
+    }
 
-        Ok(new_schedule)
+    async fn update(&self, schedule: &Schedule) -> Result<(), String> {
+        let is_available = self
+            .validation_service
+            .check_facility_availability(&schedule.facility_id, schedule)
+            .await?;
+
+        if !is_available {
+            return Err("Facility not available at requested time".to_string());
+        }
+
+        self.schedule_repo.update_schedule(schedule).await
+    }
+
+    async fn delete(&self, id: &str) -> Result<(), String> {
+        self.schedule_repo.delete_schedule(id).await
+    }
+
+    async fn suggest_available_times(
+        &self,
+        teacher_id: &str,
+        duration_minutes: i32,
+        preferred_days: Vec<Weekday>,
+    ) -> Result<Vec<Schedule>, String> {
+        self.scheduling_service
+            .suggest_available_time(teacher_id, duration_minutes, preferred_days)
+            .await
     }
 }

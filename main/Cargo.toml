@@ -9,11 +9,10 @@ student_system = { path = "../student_system" }
 dotenv = "0.15"
 axum = "0.7"
 tokio = { version = "1.0", features = ["full"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors"] }
-supabase_rs = "0.4.3"
 serde_json = "1.0"
-http = "0.2"
+actix-web = "4.11.0"
+actix-cors = "0.7.1"
+env_logger = "0.11.8"
 
 [[bin]]
 name = "scheduling_app"

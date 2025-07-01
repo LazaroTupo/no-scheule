@@ -114,7 +114,7 @@ impl ScheduleRepository for SupabaseScheduleRepository {
         Ok(schedules)
     }
 
-    async fn get_schedules_by_course(&self, course_id: &str) -> Result<Vec<Schedule>, String> {
+    async fn get_schedules_by_course(&self, course_id: &str) -> Result<Option<Schedule>, String> {
         let db = conexion::get_conn();
 
         let schedules = course_schedules::Entity::find()
@@ -134,7 +134,7 @@ impl ScheduleRepository for SupabaseScheduleRepository {
                 created_at: s.created_at.map(|dt| dt.to_string()),
                 facility_id: s.facility_id,
             })
-            .collect();
+            .next();
 
         Ok(schedules)
     }

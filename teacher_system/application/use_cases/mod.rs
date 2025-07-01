@@ -1,4 +1,4 @@
 pub mod course_management;
-pub mod extracurricular_management;
+pub mod facility_management;
 pub mod schedule_management;
-pub mod teacher_queries;
+pub mod user_management;

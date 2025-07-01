@@ -53,7 +53,7 @@ impl SchedulingService for DefaultSchedulingService {
         let mut busy_schedules = Vec::new();
         for course in teacher_courses {
             match self.schedule_repo.get_schedules_by_course(&course.id).await {
-                Ok(schedule) => busy_schedules.push(schedule),
+                Ok(schedule) => busy_schedules.extend(schedule),
                 Err(e) => return Err(e),
             }
         }
@@ -122,8 +122,11 @@ impl SchedulingService for DefaultSchedulingService {
             let existing_schedule = self
                 .schedule_repo
                 .get_schedules_by_course(&course.id)
-                .await?;
-            if existing_schedule.conflicts_with(schedule) {
+                .await?
+                .iter()
+                .any(|s| s.conflicts_with(schedule));
+
+            if existing_schedule {
                 return Ok(false);
             }
         }

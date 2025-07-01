@@ -1,8 +1,5 @@
 use crate::domain::models::schedule::Schedule;
-use crate::domain::repositories::{
-    course_repository::CourseRepository, schedule_repository::ScheduleRepository,
-    user_repository::UserRepository,
-};
+use crate::domain::repositories::schedule_repository::ScheduleRepository;
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -19,31 +16,15 @@ pub trait ValidationService: Send + Sync {
         facility_id: &str,
         schedule: &Schedule,
     ) -> Result<bool, String>;
-
-    async fn validate_teacher_hours(
-        &self,
-        teacher_id: &str,
-        additional_hours: i32,
-    ) -> Result<bool, String>;
 }
 
 pub struct DefaultValidationService {
-    course_repo: Arc<dyn CourseRepository>,
     schedule_repo: Arc<dyn ScheduleRepository>,
-    user_repo: Arc<dyn UserRepository>,
 }
 
 impl DefaultValidationService {
-    pub fn new(
-        course_repo: Arc<dyn CourseRepository>,
-        schedule_repo: Arc<dyn ScheduleRepository>,
-        user_repo: Arc<dyn UserRepository>,
-    ) -> Self {
-        Self {
-            course_repo,
-            schedule_repo,
-            user_repo,
-        }
+    pub fn new(schedule_repo: Arc<dyn ScheduleRepository>) -> Self {
+        Self { schedule_repo }
     }
 }
 
@@ -54,8 +35,13 @@ impl ValidationService for DefaultValidationService {
         teacher_id: &str,
         schedule: &Schedule,
     ) -> Result<bool, String> {
-        let teacher_schedules = self.schedule_repo.get_teacher_schedules(teacher_id).await?;
+        // Obtener todos los horarios del profesor
+        let teacher_schedules = self.schedule_repo.get_schedules_by_user(teacher_id).await?;
+
+        // Verificar conflictos con horarios existentes
         let has_conflict = teacher_schedules.iter().any(|s| s.conflicts_with(schedule));
+
+        // Si hay conflicto, el profesor no está disponible
         Ok(!has_conflict)
     }
 
@@ -64,37 +50,18 @@ impl ValidationService for DefaultValidationService {
         facility_id: &str,
         schedule: &Schedule,
     ) -> Result<bool, String> {
-        // Implement logic to check if the facility is available for the given schedule
-
+        // Obtener todos los horarios de la instalación
         let facility_schedules = self
             .schedule_repo
-            .get_facility_schedules(facility_id)
+            .get_schedules_by_facility(facility_id)
             .await?;
+
+        // Verificar conflictos con horarios existentes
         let has_conflict = facility_schedules
             .iter()
             .any(|s| s.conflicts_with(schedule));
+
+        // Si hay conflicto, la instalación no está disponible
         Ok(!has_conflict)
-    }
-
-    async fn validate_teacher_hours(
-        &self,
-        teacher_id: &str,
-        additional_hours: i32,
-    ) -> Result<bool, String> {
-        // Implement logic to validate if the teacher can take on additional hours
-
-        // let teacher = self.user_repo.get_teacher_details(teacher_id).await?;
-        // if let Some(teacher) = teacher {
-        //     let total_hours = teacher.total_hours + additional_hours;
-        //     if total_hours <= teacher.max_hours {
-        //         return Ok(true);
-        //     }
-        // }
-        // Err("Teacher cannot take on additional hours".to_string())
-        println!(
-            "Validando si el profesor {} puede tomar {} horas adicionales.",
-            teacher_id, additional_hours
-        );
-        Ok(true)
     }
 }
