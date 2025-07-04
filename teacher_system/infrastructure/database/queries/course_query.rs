@@ -1,34 +1,36 @@
 use crate::domain::{models::course::Course, repositories::course_repository::CourseRepository};
-use crate::infrastructure::database::{
-    conexion,
-    entities::{course_schedules, courses, facilities, sea_orm_active_enums},
+use crate::infrastructure::database::entities::{
+    course_schedules, courses, facilities, sea_orm_active_enums,
 };
 use async_trait::async_trait;
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, JoinType, ModelTrait, QueryFilter, QuerySelect,
-    RelationTrait, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, JoinType, ModelTrait,
+    QueryFilter, QuerySelect, RelationTrait, Set,
 };
+use shared::config::connect_to_supabase;
 
 #[derive(Clone)]
-pub struct SupabaseCourseRepository;
+pub struct SupabaseCourseRepository {
+    db: DatabaseConnection,
+}
 
 impl SupabaseCourseRepository {
-    pub fn new() -> Self {
-        Self
+    pub async fn new() -> Result<Self, String> {
+        let db = connect_to_supabase().await.map_err(|e| e.to_string())?;
+        Ok(Self { db })
     }
 
     // Función auxiliar para asignar aula automáticamente
     async fn assign_facility(&self, course: &Course) -> Result<String, String> {
         // Lógica simple para encontrar un aula disponible
         // En una implementación real, considerarías capacidad, horarios, etc.
-        let db = conexion::get_conn();
 
         // Buscar aulas con capacidad suficiente
         let facility = facilities::Entity::find()
             .filter(facilities::Column::Capacity.gte(course.capacity))
             .filter(facilities::Column::FacilityType.eq("classroom"))
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -42,8 +44,6 @@ impl SupabaseCourseRepository {
 #[async_trait]
 impl CourseRepository for SupabaseCourseRepository {
     async fn create_course(&self, course: &Course) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let new_course = courses::ActiveModel {
             id: Set(course.id.clone()),
             code: Set(course.code.clone()),
@@ -66,15 +66,16 @@ impl CourseRepository for SupabaseCourseRepository {
             updated_at: Set(Some(Utc::now().naive_utc())),
         };
 
-        new_course.insert(db).await.map_err(|e| e.to_string())?;
+        new_course
+            .insert(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     async fn update_course(&self, course: &Course) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let mut course_to_update: courses::ActiveModel = courses::Entity::find_by_id(&course.id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Curso no encontrado".to_string())?
@@ -100,17 +101,15 @@ impl CourseRepository for SupabaseCourseRepository {
         course_to_update.updated_at = Set(Some(Utc::now().naive_utc()));
 
         course_to_update
-            .update(db)
+            .update(&self.db)
             .await
             .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     async fn get_course_by_id(&self, id: &str) -> Result<Course, String> {
-        let db = conexion::get_conn();
-
         let course_model = courses::Entity::find_by_id(id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Curso no encontrado".to_string())?;
@@ -135,10 +134,8 @@ impl CourseRepository for SupabaseCourseRepository {
     }
 
     async fn get_all_courses(&self) -> Result<Vec<Course>, String> {
-        let db = conexion::get_conn();
-
         let courses = courses::Entity::find()
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -165,13 +162,11 @@ impl CourseRepository for SupabaseCourseRepository {
     }
 
     async fn get_courses_by_user(&self, user_id: &str) -> Result<Vec<Course>, String> {
-        let db = conexion::get_conn();
-
         // Para estudiantes: cursos en los que están matriculados
         // Para profesores: cursos que enseñan
         let courses = courses::Entity::find()
             .filter(courses::Column::TeacherId.eq(user_id))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -198,11 +193,9 @@ impl CourseRepository for SupabaseCourseRepository {
     }
 
     async fn get_courses_by_facility(&self, facility_id: &str) -> Result<Vec<Course>, String> {
-        let db = conexion::get_conn();
-
         let courses = courses::Entity::find()
             .filter(courses::Column::FacilityId.eq(facility_id))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -232,8 +225,6 @@ impl CourseRepository for SupabaseCourseRepository {
         &self,
         name_facility: &str,
     ) -> Result<Vec<Course>, String> {
-        let db = conexion::get_conn();
-
         let courses = courses::Entity::find()
             .join(
                 JoinType::InnerJoin,
@@ -244,7 +235,7 @@ impl CourseRepository for SupabaseCourseRepository {
                 course_schedules::Relation::Facilities.def(),
             )
             .filter(facilities::Column::Name.eq(name_facility))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -271,18 +262,16 @@ impl CourseRepository for SupabaseCourseRepository {
     }
 
     async fn get_courses_by_schedule(&self, schedule_id: &str) -> Result<Course, String> {
-        let db = conexion::get_conn();
-
         // Necesitarías un join con course_schedules
         let course_schedule = course_schedules::Entity::find_by_id(schedule_id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Horario no encontrado".to_string())?;
 
         let course_model = course_schedule
             .find_related(courses::Entity)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Curso no encontrado para este horario".to_string())?;
@@ -307,10 +296,8 @@ impl CourseRepository for SupabaseCourseRepository {
     }
 
     async fn delete_course(&self, id: &str) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let course = courses::Entity::find_by_id(id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Curso no encontrado".to_string())?;
@@ -319,7 +306,7 @@ impl CourseRepository for SupabaseCourseRepository {
         course.active = Set(Some(false)); // Borrado lógico
         course.updated_at = Set(Some(Utc::now().naive_utc()));
 
-        course.update(db).await.map_err(|e| e.to_string())?;
+        course.update(&self.db).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 }

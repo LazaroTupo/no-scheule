@@ -1,31 +1,30 @@
 use crate::domain::{
     models::facilitie::Facility, repositories::facility_repository::FacilityRepository,
 };
-use crate::infrastructure::database::{
-    conexion,
-    entities::{course_schedules, courses, facilities, users},
-};
+use crate::infrastructure::database::entities::{course_schedules, courses, facilities, users};
 use async_trait::async_trait;
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, JoinType, QueryFilter, QuerySelect, RelationTrait,
-    Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, JoinType, QueryFilter,
+    QuerySelect, RelationTrait, Set,
 };
+use shared::config::connect_to_supabase;
 
 #[derive(Clone)]
-pub struct SupabaseFacilityRepository;
+pub struct SupabaseFacilityRepository {
+    db: DatabaseConnection,
+}
 
 impl SupabaseFacilityRepository {
-    pub fn new() -> Self {
-        Self
+    pub async fn new() -> Result<Self, String> {
+        let db = connect_to_supabase().await.map_err(|e| e.to_string())?;
+        Ok(Self { db })
     }
 }
 
 #[async_trait]
 impl FacilityRepository for SupabaseFacilityRepository {
     async fn create_facility(&self, facility: &Facility) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let new_facility = facilities::ActiveModel {
             id: Set(facility.id.clone()),
             name: Set(facility.name.clone()),
@@ -34,15 +33,16 @@ impl FacilityRepository for SupabaseFacilityRepository {
             created_at: Set(Some(Utc::now().naive_utc())),
         };
 
-        new_facility.insert(db).await.map_err(|e| e.to_string())?;
+        new_facility
+            .insert(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     async fn update_facility(&self, facility: &Facility) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let existing = facilities::Entity::find_by_id(&facility.id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Facility not found".to_string())?;
@@ -52,15 +52,13 @@ impl FacilityRepository for SupabaseFacilityRepository {
         model.capacity = Set(Some(facility.capacity.clone()));
         model.facility_type = Set(Some(facility.facility_type.clone()));
 
-        model.update(db).await.map_err(|e| e.to_string())?;
+        model.update(&self.db).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
     async fn get_facility_by_id(&self, id: &str) -> Result<Facility, String> {
-        let db = conexion::get_conn();
-
         facilities::Entity::find_by_id(id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .map(|model| Facility {
@@ -74,10 +72,8 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn get_all_facilities(&self) -> Result<Vec<Facility>, String> {
-        let db = conexion::get_conn();
-
         facilities::Entity::find()
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -94,12 +90,10 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn get_facilities_by_course(&self, course_id: &str) -> Result<Facility, String> {
-        let db = conexion::get_conn();
-
         let schedules = course_schedules::Entity::find()
             .filter(course_schedules::Column::CourseId.eq(course_id))
             .find_also_related(facilities::Entity)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -120,8 +114,6 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn get_facilities_name_course(&self, name_course: &str) -> Result<Vec<Facility>, String> {
-        let db = conexion::get_conn();
-
         let facilities = facilities::Entity::find()
             .join(
                 JoinType::InnerJoin,
@@ -132,7 +124,7 @@ impl FacilityRepository for SupabaseFacilityRepository {
                 course_schedules::Relation::Courses.def(),
             )
             .filter(courses::Column::Name.eq(name_course))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -149,11 +141,9 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn get_facilities_by_schedule(&self, schedule_id: &str) -> Result<Facility, String> {
-        let db = conexion::get_conn();
-
         course_schedules::Entity::find_by_id(schedule_id)
             .find_also_related(facilities::Entity)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .and_then(|(_, facility)| facility)
@@ -168,8 +158,6 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn get_facilities_by_user(&self, user_id: &str) -> Result<Vec<Facility>, String> {
-        let db = conexion::get_conn();
-
         let facilitie = facilities::Entity::find()
             .join(
                 JoinType::InnerJoin,
@@ -177,7 +165,7 @@ impl FacilityRepository for SupabaseFacilityRepository {
             )
             .join(JoinType::InnerJoin, courses::Relation::Users.def())
             .filter(users::Column::Id.eq(user_id))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -194,10 +182,8 @@ impl FacilityRepository for SupabaseFacilityRepository {
     }
 
     async fn delete_facility(&self, id: &str) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         facilities::Entity::delete_by_id(id)
-            .exec(db)
+            .exec(&self.db)
             .await
             .map_err(|e| e.to_string())?;
         Ok(())

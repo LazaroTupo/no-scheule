@@ -3,16 +3,11 @@ use actix_web::{App, HttpServer, middleware::Logger};
 use dotenv::dotenv;
 use std::env;
 use teacher_system::infrastructure::api_restful::routes::app_routes;
-use teacher_system::infrastructure::database::conexion;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     env_logger::init();
-
-    // Configuración inicial
-    let db_url = env::var("POSTGRES_URL").expect("POSTGRES_URL environment variable not set");
-    conexion::init_connection(&db_url).await?;
 
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
 

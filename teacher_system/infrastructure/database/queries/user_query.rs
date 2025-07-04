@@ -1,30 +1,31 @@
 use crate::domain::{models::user::User, repositories::user_repository::UserRepository};
-use crate::infrastructure::database::{
-    conexion,
-    entities::{course_schedules, courses, enrollments, facilities, sea_orm_active_enums, users},
+use crate::infrastructure::database::entities::{
+    course_schedules, courses, enrollments, facilities, sea_orm_active_enums, users,
 };
 use async_trait::async_trait;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, JoinType, QueryFilter, QuerySelect, RelationTrait,
-    Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, JoinType, QueryFilter,
+    QuerySelect, RelationTrait, Set,
 };
+use shared::config::connect_to_supabase;
 
 #[derive(Clone)]
-pub struct SupabaseUserRepository;
+pub struct SupabaseUserRepository {
+    db: DatabaseConnection,
+}
 impl SupabaseUserRepository {
-    pub fn new() -> Self {
-        Self
+    pub async fn new() -> Result<Self, String> {
+        let db = connect_to_supabase().await.map_err(|e| e.to_string())?;
+        Ok(Self { db })
     }
 }
 
 #[async_trait]
 impl UserRepository for SupabaseUserRepository {
     async fn get_user_by_id(&self, user_id: &str) -> Result<Option<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
             .filter(users::Column::Id.eq(user_id))
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .map(|u| {
@@ -53,11 +54,9 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
             .filter(users::Column::Email.eq(email))
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .map(|u| {
@@ -86,10 +85,8 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_all_users(&self) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -119,8 +116,6 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn create_user(&self, user: &User) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let user_active_model = users::ActiveModel {
             id: Set(user.id.clone()),
             code: Set(user.code.clone()),
@@ -157,7 +152,7 @@ impl UserRepository for SupabaseUserRepository {
         };
 
         user_active_model
-            .insert(db)
+            .insert(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -165,11 +160,9 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn update_user(&self, user: &User) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         let mut user_active_model: users::ActiveModel = users::Entity::find()
             .filter(users::Column::Id.eq(&user.id))
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "User not found".to_string())?
@@ -208,7 +201,7 @@ impl UserRepository for SupabaseUserRepository {
         user_active_model.password = Set("password".to_string());
 
         user_active_model
-            .update(db)
+            .update(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -216,10 +209,8 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn delete_user(&self, user_id: &str) -> Result<(), String> {
-        let db = conexion::get_conn();
-
         users::Entity::delete_by_id(user_id)
-            .exec(db)
+            .exec(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -227,12 +218,10 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_course(&self, course_id: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
             .join(JoinType::InnerJoin, users::Relation::Enrollments.def())
             .filter(enrollments::Column::CourseId.eq(course_id))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -262,13 +251,11 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_course_name(&self, name_course: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
             .join(JoinType::InnerJoin, users::Relation::Enrollments.def())
             .join(JoinType::InnerJoin, enrollments::Relation::Courses.def())
             .filter(courses::Column::Name.eq(name_course))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
@@ -298,8 +285,6 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_facility(&self, facility_id: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         // Para estudiantes: a través de cursos en esa instalación
         let students = users::Entity::find()
             .join(JoinType::InnerJoin, users::Relation::Enrollments.def())
@@ -310,7 +295,7 @@ impl UserRepository for SupabaseUserRepository {
             )
             .filter(course_schedules::Column::FacilityId.eq(facility_id))
             .filter(users::Column::Role.eq(sea_orm_active_enums::UserRole::Student))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -323,7 +308,7 @@ impl UserRepository for SupabaseUserRepository {
             )
             .filter(course_schedules::Column::FacilityId.eq(facility_id))
             .filter(users::Column::Role.eq(sea_orm_active_enums::UserRole::Teacher))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -358,8 +343,6 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_facility_name(&self, name_facility: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         // Para estudiantes: a través de cursos en esa instalación
         let students = users::Entity::find()
             .join(JoinType::InnerJoin, users::Relation::Enrollments.def())
@@ -374,7 +357,7 @@ impl UserRepository for SupabaseUserRepository {
             )
             .filter(facilities::Column::Name.eq(name_facility))
             .filter(users::Column::Role.eq(sea_orm_active_enums::UserRole::Student))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -391,7 +374,7 @@ impl UserRepository for SupabaseUserRepository {
             )
             .filter(facilities::Column::Name.eq(name_facility))
             .filter(users::Column::Role.eq(sea_orm_active_enums::UserRole::Teacher))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -426,11 +409,9 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_schedule(&self, schedule_id: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         // Obtener el curso asociado al horario
         let course_id = course_schedules::Entity::find_by_id(schedule_id)
-            .one(db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Schedule not found".to_string())?
@@ -441,11 +422,9 @@ impl UserRepository for SupabaseUserRepository {
     }
 
     async fn get_users_by_name(&self, name: &str) -> Result<Vec<User>, String> {
-        let db = conexion::get_conn();
-
         users::Entity::find()
             .filter(users::Column::FullName.like(format!("%{}%", name)))
-            .all(db)
+            .all(&self.db)
             .await
             .map_err(|e| e.to_string())?
             .into_iter()
