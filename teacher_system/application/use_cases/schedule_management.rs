@@ -1,7 +1,9 @@
 use crate::domain::{
     models::{enums::Weekday, schedule::Schedule},
     repositories::schedule_repository::ScheduleRepository,
-    services::{scheduling_service::SchedulingService, validation_service::ValidationService},
+    services::{
+        scheduling_service::DefaultSchedulingService, validation_service::DefaultValidationService,
+    },
 };
 use async_trait::async_trait;
 
@@ -21,15 +23,15 @@ pub trait ScheduleManagementUseCase {
 }
 pub struct ScheduleManagementUseCaseImpl {
     schedule_repo: Box<dyn ScheduleRepository + Send + Sync>,
-    validation_service: Box<dyn ValidationService + Send + Sync>,
-    scheduling_service: Box<dyn SchedulingService + Send + Sync>,
+    validation_service: DefaultValidationService,
+    scheduling_service: DefaultSchedulingService,
 }
 
 impl ScheduleManagementUseCaseImpl {
     pub fn new(
         schedule_repo: Box<dyn ScheduleRepository + Send + Sync>,
-        validation_service: Box<dyn ValidationService + Send + Sync>,
-        scheduling_service: Box<dyn SchedulingService + Send + Sync>,
+        validation_service: DefaultValidationService,
+        scheduling_service: DefaultSchedulingService,
     ) -> Self {
         Self {
             schedule_repo,

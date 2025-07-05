@@ -1,23 +1,8 @@
 use crate::domain::models::schedule::Schedule;
 use crate::domain::repositories::schedule_repository::ScheduleRepository;
-use async_trait::async_trait;
 use std::sync::Arc;
 
-#[async_trait]
-pub trait ValidationService: Send + Sync {
-    async fn check_teacher_availability(
-        &self,
-        teacher_id: &str,
-        schedule: &Schedule,
-    ) -> Result<bool, String>;
-
-    async fn check_facility_availability(
-        &self,
-        facility_id: &str,
-        schedule: &Schedule,
-    ) -> Result<bool, String>;
-}
-
+#[derive(Clone)]
 pub struct DefaultValidationService {
     schedule_repo: Arc<dyn ScheduleRepository>,
 }
@@ -26,11 +11,8 @@ impl DefaultValidationService {
     pub fn new(schedule_repo: Arc<dyn ScheduleRepository>) -> Self {
         Self { schedule_repo }
     }
-}
 
-#[async_trait]
-impl ValidationService for DefaultValidationService {
-    async fn check_teacher_availability(
+    pub async fn check_teacher_availability(
         &self,
         teacher_id: &str,
         schedule: &Schedule,
@@ -45,7 +27,7 @@ impl ValidationService for DefaultValidationService {
         Ok(!has_conflict)
     }
 
-    async fn check_facility_availability(
+    pub async fn check_facility_availability(
         &self,
         facility_id: &str,
         schedule: &Schedule,

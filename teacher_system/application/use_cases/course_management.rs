@@ -1,10 +1,9 @@
 use crate::domain::{
     models::{course::Course, schedule::Schedule},
     repositories::course_repository::CourseRepository,
-    services::validation_service::ValidationService,
+    services::validation_service::DefaultValidationService,
 };
 use async_trait::async_trait;
-use std::sync::Arc;
 #[async_trait]
 pub trait CourseManagementUseCase {
     async fn register_extracourse(&self, course: Course, schedule: Schedule) -> Result<(), String>;
@@ -21,13 +20,13 @@ pub trait CourseManagementUseCase {
 
 pub struct CourseManagementUseCaseImpl {
     course_repo: Box<dyn CourseRepository + Send + Sync>,
-    validation_service: Arc<dyn ValidationService>,
+    validation_service: DefaultValidationService,
 }
 
 impl CourseManagementUseCaseImpl {
     pub fn new(
         course_repo: Box<dyn CourseRepository + Send + Sync>,
-        validation_service: Arc<dyn ValidationService>,
+        validation_service: DefaultValidationService,
     ) -> Self {
         Self {
             course_repo,
