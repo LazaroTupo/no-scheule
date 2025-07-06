@@ -104,3 +104,21 @@ pub async fn delete_course(
         }
     }
 }
+
+pub async fn get_courses_by_user(
+    use_case: web::Data<AppState>,
+    user_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    match use_case.course_use_case.get_by_user(&user_id).await {
+        Ok(courses) => Ok(HttpResponse::Ok().json(courses)),
+        Err(e) if e.to_lowercase().contains("not found") => {
+            Ok(HttpResponse::NotFound().body("Courses not found for user"))
+        }
+        Err(e) => {
+            eprintln!("Error fetching courses by user: {}", e);
+            Err(actix_web::error::ErrorInternalServerError(
+                "Internal server error",
+            ))
+        }
+    }
+}

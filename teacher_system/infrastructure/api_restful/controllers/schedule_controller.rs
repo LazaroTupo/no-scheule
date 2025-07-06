@@ -1,6 +1,6 @@
 use super::super::config::app_state::AppState;
 use crate::application::use_cases::schedule_management::ScheduleManagementUseCase;
-use crate::domain::{models::enums::Weekday, models::schedule::Schedule};
+use crate::domain::models::schedule::Schedule;
 use actix_web::{Error, HttpResponse, web};
 
 // Operaciones CRUD básicas
@@ -92,13 +92,10 @@ pub async fn delete_schedule(
 pub async fn suggest_available_times(
     use_case: web::Data<AppState>,
     teacher_id: web::Path<String>,
-    payload: web::Json<(i32, Vec<Weekday>)>,
 ) -> Result<HttpResponse, Error> {
-    let (duration_minutes, preferred_days) = payload.into_inner();
-
     match use_case
         .schedule_use_case
-        .suggest_available_times(&teacher_id, duration_minutes, preferred_days)
+        .suggest_available_times(&teacher_id)
         .await
     {
         Ok(suggestions) => Ok(HttpResponse::Ok().json(suggestions)),

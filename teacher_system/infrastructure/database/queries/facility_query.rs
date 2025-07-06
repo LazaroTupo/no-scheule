@@ -1,14 +1,21 @@
 use crate::domain::{
-    models::facilitie::Facility, repositories::facility_repository::FacilityRepository,
+    models::enums::Weekday, models::facilitie::Facility,
+    models::facilitie_available::FacilityAvailable,
+    repositories::facility_repository::FacilityRepository,
 };
-use crate::infrastructure::database::entities::{course_schedules, courses, facilities, users};
+use crate::infrastructure::database::entities::{
+    course_schedules, courses, facilities, sea_orm_active_enums, users,
+};
 use async_trait::async_trait;
+use chrono::NaiveTime;
+use chrono::Timelike;
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, JoinType, QueryFilter,
     QuerySelect, RelationTrait, Set,
 };
 use shared::config::connect_to_supabase;
+use std::collections::BTreeMap;
 
 #[derive(Clone)]
 pub struct SupabaseFacilityRepository {
@@ -187,5 +194,118 @@ impl FacilityRepository for SupabaseFacilityRepository {
             .await
             .map_err(|e| e.to_string())?;
         Ok(())
+    }
+
+    async fn get_facility_available(&self) -> Result<Vec<FacilityAvailable>, String> {
+        // Obtener todas las facilities
+        let facilities = facilities::Entity::find()
+            .all(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        // Obtener todos los horarios ocupados agrupados por facility_id y día
+        let occupied_schedules = course_schedules::Entity::find()
+            .find_also_related(facilities::Entity)
+            .all(&self.db)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        // Procesar los resultados
+        let mut available_facilities = Vec::new();
+
+        for facility in facilities {
+            // Filtrar los horarios ocupados para esta facility
+            let occupied_for_facility: Vec<&course_schedules::Model> = occupied_schedules
+                .iter()
+                .filter(|(schedule, _)| schedule.facility_id == facility.id)
+                .map(|(schedule, _)| schedule)
+                .collect();
+
+            // Agrupar por día
+            let mut schedules_by_day: BTreeMap<Weekday, Vec<(NaiveTime, NaiveTime)>> =
+                BTreeMap::new();
+
+            let occupied_for_facility_is_empty = occupied_for_facility.is_empty();
+
+            for schedule in occupied_for_facility {
+                let day = sea_orm_active_enums::to_domain_weekday(&schedule.day);
+                schedules_by_day
+                    .entry(day)
+                    .or_default()
+                    .push((schedule.start_time, schedule.end_time));
+            }
+
+            // Para cada día, calcular los rangos disponibles
+            for (day, occupied_ranges) in schedules_by_day {
+                // Si no hay horarios ocupados, toda la jornada está disponible
+                if occupied_ranges.is_empty() {
+                    available_facilities.push(FacilityAvailable {
+                        id: facility.id.clone(),
+                        name: facility.name.clone(),
+                        capacity: facility.capacity.unwrap_or(0),
+                        facility_type: facility.facility_type.as_ref().cloned().unwrap_or_default(),
+                        day,
+                        hours_range: vec![(0, 23)],
+                    });
+                    continue;
+                }
+
+                // Ordenar los rangos ocupados por hora de inicio
+                let mut occupied_ranges = occupied_ranges;
+                occupied_ranges.sort_by(|a, b| a.0.cmp(&b.0));
+
+                // Calcular los rangos disponibles (inversos de los ocupados)
+                let mut available_ranges = Vec::new();
+                let mut last_end = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+
+                for (start, end) in occupied_ranges {
+                    if start > last_end {
+                        available_ranges.push((last_end.hour(), start.hour()));
+                    }
+                    if end > last_end {
+                        last_end = end;
+                    }
+                }
+
+                // Agregar el último rango disponible si queda tiempo
+                if last_end < NaiveTime::from_hms_opt(23, 59, 59).unwrap() {
+                    available_ranges.push((last_end.hour(), 23));
+                }
+
+                // Crear el registro de disponibilidad
+                available_facilities.push(FacilityAvailable {
+                    id: facility.id.clone(),
+                    name: facility.name.clone(),
+                    capacity: facility.capacity.unwrap_or(0),
+                    facility_type: facility.facility_type.as_ref().cloned().unwrap_or_default(),
+                    day,
+                    hours_range: available_ranges,
+                });
+            }
+
+            // Si no hay horarios ocupados para ninguna facility, agregar todos los días como disponibles
+            if occupied_for_facility_is_empty {
+                for day in [
+                    Weekday::Monday,
+                    Weekday::Tuesday,
+                    Weekday::Wednesday,
+                    Weekday::Thursday,
+                    Weekday::Friday,
+                    Weekday::Saturday,
+                    Weekday::Sunday,
+                ] {
+                    available_facilities.push(FacilityAvailable {
+                        id: facility.id.clone(),
+                        name: facility.name.clone(),
+                        capacity: facility.capacity.unwrap_or(0),
+                        facility_type: facility.facility_type.as_ref().cloned().unwrap_or_default(),
+                        day,
+                        hours_range: vec![(0, 23)], // Todo el día disponible
+                    });
+                }
+            }
+        }
+
+        Ok(available_facilities)
     }
 }

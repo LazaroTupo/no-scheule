@@ -3053,6 +3053,7 @@ dependencies = [
  "env_logger",
  "log",
  "once_cell",
+ "rand 0.9.1",
  "sea-orm",
  "serde",
  "serde_json",

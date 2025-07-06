@@ -1,7 +1,8 @@
 // src/application/usecases/facility_management_usecase.rs
 
 use crate::domain::{
-    models::facilitie::Facility, repositories::facility_repository::FacilityRepository,
+    models::{facilitie::Facility, facilitie_available::FacilityAvailable},
+    repositories::facility_repository::FacilityRepository,
 };
 use async_trait::async_trait;
 
@@ -16,6 +17,7 @@ pub trait FacilityManagementUseCase {
     async fn get_by_name_course(&self, name_course: &str) -> Result<Vec<Facility>, String>;
     async fn get_by_schedule(&self, schedule_id: &str) -> Result<Facility, String>;
     async fn get_by_user(&self, user_id: &str) -> Result<Vec<Facility>, String>;
+    async fn get_facility_available(&self) -> Result<Vec<FacilityAvailable>, String>;
 }
 
 pub struct FacilityManagementUseCaseImpl {
@@ -68,5 +70,9 @@ impl FacilityManagementUseCase for FacilityManagementUseCaseImpl {
 
     async fn get_by_user(&self, user_id: &str) -> Result<Vec<Facility>, String> {
         self.facility_repo.get_facilities_by_user(user_id).await
+    }
+
+    async fn get_facility_available(&self) -> Result<Vec<FacilityAvailable>, String> {
+        self.facility_repo.get_facility_available().await
     }
 }

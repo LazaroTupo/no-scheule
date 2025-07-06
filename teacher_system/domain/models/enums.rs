@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Curriculum {
@@ -18,7 +17,7 @@ pub enum EnrollmentStatus {
     Dropped,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum Weekday {
     Monday,
     Tuesday,
@@ -51,156 +50,132 @@ pub enum ContractType {
     Associate,
 }
 
-impl FromStr for Curriculum {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl Curriculum {
+    pub fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "Obligatory" => Ok(Curriculum::Obligatory),
-            "Elective" => Ok(Curriculum::Elective),
-            "Prerequisite" => Ok(Curriculum::Prerequisite),
+            "Obligatory" => Ok(Self::Obligatory),
+            "Elective" => Ok(Self::Elective),
+            "Prerequisite" => Ok(Self::Prerequisite),
             _ => Err(()),
         }
     }
-}
 
-impl ToString for Curriculum {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
-            Curriculum::Obligatory => "Obligatory".to_string(),
-            Curriculum::Elective => "Elective".to_string(),
-            Curriculum::Prerequisite => "Prerequisite".to_string(),
+            Self::Obligatory => "Obligatory".to_string(),
+            Self::Elective => "Elective".to_string(),
+            Self::Prerequisite => "Prerequisite".to_string(),
         }
     }
 }
 
-impl FromStr for EnrollmentStatus {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl EnrollmentStatus {
+    pub fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "enrolled" => Ok(EnrollmentStatus::Enrolled),
-            "withdrawn" => Ok(EnrollmentStatus::Withdrawn),
-            "completed" => Ok(EnrollmentStatus::Completed),
-            "failed" => Ok(EnrollmentStatus::Failed),
-            "pending" => Ok(EnrollmentStatus::Pending),
-            "dropped" => Ok(EnrollmentStatus::Dropped),
+            "enrolled" => Ok(Self::Enrolled),
+            "withdrawn" => Ok(Self::Withdrawn),
+            "completed" => Ok(Self::Completed),
+            "failed" => Ok(Self::Failed),
+            "pending" => Ok(Self::Pending),
+            "dropped" => Ok(Self::Dropped),
             _ => Err(()),
         }
     }
-}
 
-impl ToString for EnrollmentStatus {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
-            EnrollmentStatus::Enrolled => "enrolled".to_string(),
-            EnrollmentStatus::Withdrawn => "withdrawn".to_string(),
-            EnrollmentStatus::Completed => "completed".to_string(),
-            EnrollmentStatus::Failed => "failed".to_string(),
-            EnrollmentStatus::Pending => "pending".to_string(),
-            EnrollmentStatus::Dropped => "dropped".to_string(),
+            Self::Enrolled => "enrolled".to_string(),
+            Self::Withdrawn => "withdrawn".to_string(),
+            Self::Completed => "completed".to_string(),
+            Self::Failed => "failed".to_string(),
+            Self::Pending => "pending".to_string(),
+            Self::Dropped => "dropped".to_string(),
         }
     }
 }
 
-impl FromStr for SessionType {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl SessionType {
+    pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
-            "theory" => Ok(SessionType::Theory),
-            "laboratory" => Ok(SessionType::Laboratory),
-            "seminar" => Ok(SessionType::Seminar),
-            "practice" => Ok(SessionType::Practice),
+            "theory" => Ok(Self::Theory),
+            "laboratory" => Ok(Self::Laboratory),
+            "seminar" => Ok(Self::Seminar),
+            "practice" => Ok(Self::Practice),
             _ => Err(format!("Unknown session type: {}", s)),
         }
     }
-}
 
-impl ToString for SessionType {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
-            SessionType::Theory => "theory".to_string(),
-            SessionType::Laboratory => "laboratory".to_string(),
-            SessionType::Seminar => "seminar".to_string(),
-            SessionType::Practice => "practice".to_string(),
+            Self::Theory => "theory".to_string(),
+            Self::Laboratory => "laboratory".to_string(),
+            Self::Seminar => "seminar".to_string(),
+            Self::Practice => "practice".to_string(),
         }
     }
 }
 
-impl FromStr for Weekday {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl Weekday {
+    pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
-            "monday" => Ok(Weekday::Monday),
-            "tuesday" => Ok(Weekday::Tuesday),
-            "wednesday" => Ok(Weekday::Wednesday),
-            "thursday" => Ok(Weekday::Thursday),
-            "friday" => Ok(Weekday::Friday),
-            "saturday" => Ok(Weekday::Saturday),
-            "sunday" => Ok(Weekday::Sunday),
+            "monday" => Ok(Self::Monday),
+            "tuesday" => Ok(Self::Tuesday),
+            "wednesday" => Ok(Self::Wednesday),
+            "thursday" => Ok(Self::Thursday),
+            "friday" => Ok(Self::Friday),
+            "saturday" => Ok(Self::Saturday),
+            "sunday" => Ok(Self::Sunday),
             _ => Err(format!("Unknown weekday: {}", s)),
         }
     }
-}
 
-impl ToString for Weekday {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
-            Weekday::Monday => "monday".to_string(),
-            Weekday::Tuesday => "tuesday".to_string(),
-            Weekday::Wednesday => "wednesday".to_string(),
-            Weekday::Thursday => "thursday".to_string(),
-            Weekday::Friday => "friday".to_string(),
-            Weekday::Saturday => "saturday".to_string(),
-            Weekday::Sunday => "sunday".to_string(),
+            Self::Monday => "monday".to_string(),
+            Self::Tuesday => "tuesday".to_string(),
+            Self::Wednesday => "wednesday".to_string(),
+            Self::Thursday => "thursday".to_string(),
+            Self::Friday => "friday".to_string(),
+            Self::Saturday => "saturday".to_string(),
+            Self::Sunday => "sunday".to_string(),
         }
     }
 }
 
-impl ToString for StudentStatus {
-    fn to_string(&self) -> String {
-        match self {
-            StudentStatus::Regular => "regular".to_string(),
-            StudentStatus::Observation => "observado".to_string(),
-            StudentStatus::Graduated => "graduated".to_string(),
-        }
-    }
-}
-
-impl FromStr for StudentStatus {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl StudentStatus {
+    pub fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "regular" => Ok(StudentStatus::Regular),
-            "observado" => Ok(StudentStatus::Observation),
-            "graduated" => Ok(StudentStatus::Graduated),
+            "regular" => Ok(Self::Regular),
+            "observado" => Ok(Self::Observation),
+            "graduated" => Ok(Self::Graduated),
             _ => Err(()),
         }
     }
-}
 
-impl ToString for ContractType {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
-            ContractType::Contracted => "contratado".to_string(),
-            ContractType::Principal => "principal".to_string(),
-            ContractType::Associate => "asociado".to_string(),
+            Self::Regular => "regular".to_string(),
+            Self::Observation => "observado".to_string(),
+            Self::Graduated => "graduated".to_string(),
         }
     }
 }
 
-impl FromStr for ContractType {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl ContractType {
+    pub fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "contratado" => Ok(ContractType::Contracted),
-            "principal" => Ok(ContractType::Principal),
-            "asociado" => Ok(ContractType::Associate),
+            "contratado" => Ok(Self::Contracted),
+            "principal" => Ok(Self::Principal),
+            "asociado" => Ok(Self::Associate),
             _ => Err(()),
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::Contracted => "contratado".to_string(),
+            Self::Principal => "principal".to_string(),
+            Self::Associate => "asociado".to_string(),
         }
     }
 }
