@@ -1,5 +1,4 @@
 use crate::domain::models::facilitie::Facility;
-use crate::domain::models::facilitie_available::FacilityAvailable;
 use async_trait::async_trait;
 
 #[async_trait]
@@ -13,5 +12,4 @@ pub trait FacilityRepository: Send + Sync {
     async fn get_facilities_by_schedule(&self, schedule_id: &str) -> Result<Facility, String>;
     async fn get_facilities_by_user(&self, user_id: &str) -> Result<Vec<Facility>, String>;
     async fn delete_facility(&self, id: &str) -> Result<(), String>;
-    async fn get_facility_available(&self) -> Result<Vec<FacilityAvailable>, String>;
 }

@@ -1,13 +1,15 @@
-// src/infrastructure/api/routes.rs
-
 use crate::infrastructure::api_restful::controllers::{
     course_controller, facility_controller, schedule_controller,
 };
+use actix_web::web::ServiceConfig;
 use actix_web::{Scope, web};
 
-/// Retorna un `Scope` con todas las rutas agrupadas por entidad
+pub fn configure_teacher_routes(cfg: &mut ServiceConfig) {
+    cfg.service(app_routes());
+}
+
 pub fn app_routes() -> Scope {
-    web::scope("/api")
+    web::scope("/teacher")
         .service(course_routes())
         .service(schedule_routes())
         .service(facility_routes())
@@ -21,10 +23,6 @@ fn course_routes() -> Scope {
         .route("/{id}", web::get().to(course_controller::get_course_by_id))
         .route("/{id}", web::put().to(course_controller::update_course))
         .route("/{id}", web::delete().to(course_controller::delete_course))
-        .route(
-            "/of-user/{id}",
-            web::get().to(course_controller::get_courses_by_user),
-        )
 }
 
 /// Rutas relacionadas a `Schedule`
@@ -44,7 +42,7 @@ fn schedule_routes() -> Scope {
         // Operaciones específicas
         .route(
             "/suggest/{teacher_id}",
-            web::get().to(schedule_controller::suggest_available_times),
+            web::post().to(schedule_controller::suggest_available_times),
         )
 }
 
@@ -61,9 +59,5 @@ fn facility_routes() -> Scope {
         .route(
             "/{id}",
             web::delete().to(facility_controller::delete_facility),
-        )
-        .route(
-            "/available",
-            web::get().to(facility_controller::get_facility_available),
         )
 }

@@ -1,5 +1,5 @@
 use crate::domain::{
-    models::schedule::Schedule,
+    models::{enums::Weekday, schedule::Schedule},
     repositories::schedule_repository::ScheduleRepository,
     services::{
         scheduling_service::DefaultSchedulingService, validation_service::DefaultValidationService,
@@ -14,7 +14,12 @@ pub trait ScheduleManagementUseCase {
     async fn create(&self, schedule: Schedule) -> Result<(), String>;
     async fn update(&self, schedule: &Schedule) -> Result<(), String>;
     async fn delete(&self, id: &str) -> Result<(), String>;
-    async fn suggest_available_times(&self, teacher_id: &str) -> Result<Vec<Schedule>, String>;
+    async fn suggest_available_times(
+        &self,
+        teacher_id: &str,
+        duration_minutes: i32,
+        preferred_days: Vec<Weekday>,
+    ) -> Result<Vec<Schedule>, String>;
 }
 pub struct ScheduleManagementUseCaseImpl {
     schedule_repo: Box<dyn ScheduleRepository + Send + Sync>,
@@ -79,9 +84,14 @@ impl ScheduleManagementUseCase for ScheduleManagementUseCaseImpl {
         self.schedule_repo.delete_schedule(id).await
     }
 
-    async fn suggest_available_times(&self, teacher_id: &str) -> Result<Vec<Schedule>, String> {
+    async fn suggest_available_times(
+        &self,
+        teacher_id: &str,
+        duration_minutes: i32,
+        preferred_days: Vec<Weekday>,
+    ) -> Result<Vec<Schedule>, String> {
         self.scheduling_service
-            .suggest_available_time(teacher_id)
+            .suggest_available_time(teacher_id, duration_minutes, preferred_days)
             .await
     }
 }

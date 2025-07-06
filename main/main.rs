@@ -11,8 +11,7 @@ async fn main() -> Result<(), String> {
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
 
-    // Initialize app state
-    let app_state = boostrap::bootstrap_server().await?;
+    let app_state = boostrap::bootstrap_teacher().await?;
 
     println!("🚀 Server running on http://localhost:{port}");
 

@@ -12,6 +12,7 @@ use sea_orm::{
     QuerySelect, RelationTrait, Set,
 };
 use shared::config::connect_to_supabase;
+use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct SupabaseScheduleRepository {
